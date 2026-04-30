@@ -1,0 +1,91 @@
+version: 2
+
+sources:
+  - name: raw_lending
+    description: "Raw loan and payment data from source systems"
+    schema: raw_lending
+    tables:
+      - name: loan_applications
+        description: "Raw loan application records with borrower and loan details"
+        columns:
+          - name: loan_id
+            description: "Unique loan identifier"
+            tests:
+              - not_null
+              - unique
+          - name: borrower_id
+            tests:
+              - not_null
+          - name: loan_amount
+            tests:
+              - not_null
+
+      - name: payment_transactions
+        description: "Raw payment transaction records"
+        columns:
+          - name: payment_id
+            tests:
+              - not_null
+              - unique
+          - name: loan_id
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw_lending', 'loan_applications')
+                  field: loan_id
+
+      - name: borrower_profiles
+        description: "Raw borrower demographic and credit profile data"
+        columns:
+          - name: borrower_id
+            tests:
+              - not_null
+              - unique
+
+models:
+  - name: stg_loans
+    description: "Cleaned and standardized loan application data. Casts data types, removes nulls, and ensures data quality for downstream models."
+    columns:
+      - name: loan_id
+        description: "Unique loan identifier"
+        tests:
+          - not_null
+          - unique
+      - name: borrower_id
+        tests:
+          - not_null
+      - name: loan_amount
+        description: "Approved loan amount in USD"
+        tests:
+          - not_null
+      - name: loan_status
+        tests:
+          - accepted_values:
+              values: ['current', 'fully_paid', 'charged_off', 'default', 'late', 'rejected', 'in_grace_period']
+
+  - name: stg_payments
+    description: "Cleaned payment transaction data with derived payment_health flag."
+    columns:
+      - name: payment_id
+        tests:
+          - not_null
+          - unique
+      - name: loan_id
+        tests:
+          - not_null
+      - name: payment_health
+        tests:
+          - accepted_values:
+              values: ['current', 'late', 'delinquent']
+
+  - name: stg_borrowers
+    description: "Cleaned borrower profile data with credit_segment classification."
+    columns:
+      - name: borrower_id
+        tests:
+          - not_null
+          - unique
+      - name: credit_segment
+        tests:
+          - accepted_values:
+              values: ['prime', 'near_prime', 'subprime', 'deep_subprime']
