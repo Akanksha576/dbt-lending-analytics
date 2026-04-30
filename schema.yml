@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: fct_loan_performance
+    description: >
+      Core fact table joining loan, payment, and borrower data.
+      Used by Product, Risk, and Analytics teams to analyze loan health,
+      repayment performance, and borrower behavior. Enables faster,
+      more reliable decision-making across the business.
+    columns:
+      - name: loan_id
+        description: "Unique loan identifier — primary key"
+        tests:
+          - not_null
+          - unique
+      - name: loan_health_status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['current', 'delinquent', 'paid_off', 'charged_off_risk']
+      - name: repayment_rate_pct
+        description: "Percentage of loan amount repaid (0-100)"
+        tests:
+          - not_null
+      - name: is_high_risk
+        description: "Boolean flag for high-risk loans — used by Risk team for underwriting"
+        tests:
+          - not_null
+
+  - name: mrt_product_metrics
+    description: >
+      Monthly product KPIs aggregated by loan purpose, risk grade,
+      and credit segment. Supports Product team roadmap initiatives
+      and ad hoc analysis — clean, scalable datasets analysts can
+      trust and use independently without bottlenecks.
+    columns:
+      - name: month
+        description: "Month of loan application"
+        tests:
+          - not_null
+      - name: funding_conversion_rate
+        description: "% of applications that were funded — core product funnel metric"
+
+  - name: mrt_risk_summary
+    description: >
+      Risk analytics mart for underwriting and portfolio monitoring.
+      Enables the Risk team to identify high-risk borrower segments
+      and make confident lending decisions with reliable data.
+    columns:
+      - name: credit_segment
+        description: "Borrower credit quality tier (prime/near_prime/subprime/deep_subprime)"
+        tests:
+          - not_null
+      - name: delinquency_rate
+        description: "% of loans in delinquent status within cohort"
